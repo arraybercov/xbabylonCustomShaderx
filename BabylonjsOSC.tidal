@@ -1,0 +1,31 @@
+cps (150/60/4)
+
+
+
+x1 $ s "bd sd bd sd bd sd bd sd bd sd bd sd bd sd bd sd sd sd bd sd sd sd sd bd" # speed (scale 0.1 4 (slow 16 saw))
+
+x1 $ s "bd sd arpy" # speed (scale 0.1 8 (slow 16 saw))
+
+
+import Sound.Tidal.OscStream
+
+let myShape = dirt {
+    Sound.Tidal.Context.latency = 0,
+    cpsStamp = False
+    }
+    mySlang = OscSlang {
+      path = "/play2",
+      timestamp = NoStamp,
+      namedParams = True,
+      preamble = []
+      }
+
+    myStream = do
+      s <- makeConnection "127.0.0.1" 4000 mySlang
+      stream (Backend s $ (\_ _ _ -> return ())) myShape
+
+      s1 <- myStream
+
+      let x1 p = s1 p >> d1 p
+          hush = mapM_ ($ silence) [x1,d2,d3,d4,d5,d6,d7,d8,d9]
+          solo = (>>) hush

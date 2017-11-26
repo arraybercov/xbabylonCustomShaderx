@@ -1,0 +1,151 @@
+<html>
+  <head>
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <meta charset="utf-8">
+  <title>xBabylonjsCustomShaderx</title>
+
+  <script src="js/babylon.max.js"></script>
+
+  <style>
+    html, body {
+            width: 100%;
+            height: 100%
+            padding: 0;
+            background-color: #000000;
+            margin: 0;
+            overflow: hidden;
+
+    }
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <script type="application/vertexShader" id="vertexShaderCode">
+  #ifdef GL_ES
+      precision mediump float;
+      #endif
+
+      // Attributes
+      attribute vec3 position;
+      attribute vec2 uv;
+
+      // Uniforms
+      uniform mat4 worldViewProjection;
+
+      // Normal
+      varying vec2 vUv;
+
+      void main(void) {
+      gl_Position = worldViewProjection * vec4(position, 1.0);
+
+      vUv = uv;
+      }
+</script>
+
+  <script type="application/fragmentshader" id="fragmentShaderCode">
+  #ifdef GL_ES
+  precision mediump float;
+  #endif
+
+  uniform float time;
+  // uniform vec2 resolution;
+
+  varying vec2 vUv;
+
+  void main( void ) {
+
+      vec2 uv = -1.0 + 10.0 * vUv;
+      float t = time*(time+cos(time))*.0003, k = cos(t), l = sin(t);
+
+      float s = .2;
+      for(int i=0; i<64; ++i) {
+          uv  = abs(uv) - s;    // Mirror
+          uv *= mat2(k,-l,l,k); // Rotate
+          s  *= .95156;         // Scale
+      }
+
+      float x = .5 + .67*cos(6.28318*(40.*length(uv)));
+      gl_FragColor = vec4(vec3(x),1);
+  }
+  </script>
+
+<script>
+
+"use strict";
+
+var canvas, engine, scene, camera, createScene;
+var scene;
+
+    window.addEventListener('DOMContentLoaded', function() {
+
+    canvas = document.getElementById("renderCanvas");
+    engine = new BABYLON.Engine(canvas, true);
+
+    createScene = function() {
+        engine.setHardwareScalingLevel(0.5);
+        scene = new BABYLON.Scene( engine );
+        scene.clearColor = new BABYLON.Color3.Black();
+        camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 1.3, 12, BABYLON.Vector3.Zero(), scene);
+        camera.minZ = 0.1;
+        camera.maxZ = 20000;
+        camera.inertia = 0;
+        camera.angularSensibilityX = 100;
+        camera.angularSensibilityY = 100;
+        camera.setPosition(new BABYLON.Vector3(0, 0, 7.8));
+
+        camera.attachControl(canvas, true);
+        scene.activeCamera.panningSensibility = 0;
+
+        var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 0, 0), scene);
+
+        var shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, {
+						vertexElement: "vertexShaderCode",
+						fragmentElement: "fragmentShaderCode",
+					},
+					{
+            // attributes: ["position", "normal", "uv"],
+            // uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
+						attributes: ["position", "normal", "uv"],
+						uniforms: ["worldViewProjection"]
+					});
+
+        var time = shaderMaterial.setFloat("time", 0.1);
+        // shaderMaterial.setTexture("iChannel0", new BABYLON.Texture("/textures/cloudsPo2.jpg", scene));
+        // shaderMaterial.setTexture("iChannel1", new BABYLON.Texture("/textures/internalFlesh1024Po2.jpg", scene));
+
+				shaderMaterial.backFaceCulling = false;
+
+				var plane = BABYLON.MeshBuilder.CreatePlane("plane", {width:5, height:5}, scene);
+				plane.material = shaderMaterial;
+
+        // var time = scene.getRenderDuration();
+
+        scene.registerBeforeRender(function () {
+        // var time = Date.now();
+        time._floats.time += 0.05;
+        });
+
+        return scene;
+      }
+
+        scene = createScene();
+        engine.runRenderLoop(function() {
+
+          scene.render();
+        });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+      });
+
+</script>
+</body>
+</html>
